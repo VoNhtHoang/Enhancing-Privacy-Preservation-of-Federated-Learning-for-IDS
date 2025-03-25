@@ -1,6 +1,7 @@
 """Imports"""
 from datetime import timedelta
 import random
+import numpy as np
 
 """Simulation Parameters"""
 
@@ -60,29 +61,24 @@ tolerance = 10.0  # note this value should change depending on whether you are n
 """Latency"""
 SIMULATE_LATENCIES = True
 # Define any agent-agent communication latencies here. If none is provided, defaults to zero.
+active_clients_list=['client_0', 'client_1', 'client_2']
+server_name ="server_0"
+
 
 
 LATENCY_DICT = {}
-# # fill in the rest with zeros:
-if 'server_agent_0' not in LATENCY_DICT.keys():
-    LATENCY_DICT['server_agent_0'] = {}
+for name in active_clients_list:
+            if name not in LATENCY_DICT.keys():
+                LATENCY_DICT[name]={}
+if server_name not in LATENCY_DICT.keys():
+    LATENCY_DICT[server_name]={}
+            
+LATENCY_DICT['server_0']={client_name: timedelta(seconds=0.1) for client_name in active_clients_list}
+for client_name in active_clients_list:
+    LATENCY_DICT[client_name]['server_0'] = timedelta(seconds= np.random.random())
 
-for client_name in client_names:
-    if client_name not in LATENCY_DICT.keys():
-        LATENCY_DICT[client_name] = {client_name2: timedelta(seconds=0.1) for client_name2 in client_names}
-    LATENCY_DICT[client_name]['server_agent_0'] = timedelta(seconds=0.1)
-    LATENCY_DICT['server_agent_0'][client_name] = timedelta(seconds=0.1)
 
-LATENCY_DICT['client_agent_1'] = {client_name: timedelta(seconds=2.0) for client_name in client_names}
-LATENCY_DICT['client_agent_1']['server_agent_0'] = timedelta(seconds=2.0)
-LATENCY_DICT['server_agent_0']['client_agent_1'] = timedelta(seconds=2.0)
 
-LATENCY_DICT['client_agent_0']['server_agent_0'] = timedelta(seconds=0.3)
-LATENCY_DICT['server_agent_0']['client_agent_0'] = timedelta(seconds=0.3)
-
-"""
-Additional Constants: likely won't need modification
-"""
 # LOG_MAX_ITER: max iterations for the logistic regression
 LOG_MAX_ITER = 10
 random.seed(0)

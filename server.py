@@ -36,7 +36,7 @@ def find_slowest_time(messages):
     simulated_time = simulated_communication_times[slowest_client]  # simulated time it would take for server to receive all values
     return simulated_time
 
-num_iterations = 3
+num_iterations = 5
 LATENCY_DICT = {}
 
 class Message:
@@ -56,21 +56,15 @@ class Server():
         self.active_clients_list = active_clients_list
         self.agents_dict = {}
         
-        if 'server_0' not in LATENCY_DICT.keys():
-            LATENCY_DICT['server_0'] = {}
-
-        for client_name in self.active_clients_list:
-            if client_name not in LATENCY_DICT.keys():
-                LATENCY_DICT[client_name] = {client_name2: timedelta(seconds=0.1) for client_name2 in active_clients_list}
-            LATENCY_DICT[client_name]['server_0'] = timedelta(seconds=0.1)
-            LATENCY_DICT['server_0'][client_name] = timedelta(seconds=0.1)
-
-        LATENCY_DICT['client_1'] = {client_name: timedelta(seconds=2.0) for client_name in active_clients_list}
-        LATENCY_DICT['client_1']['server_0'] = timedelta(seconds=2.0)
-        LATENCY_DICT['server_0']['client_1'] = timedelta(seconds=2.0)
-
-        LATENCY_DICT['client_0']['server_0'] = timedelta(seconds=0.3)
-        LATENCY_DICT['server_0']['client_0'] = timedelta(seconds=0.3)
+        for name in active_clients_list:
+            if name not in LATENCY_DICT.keys():
+                LATENCY_DICT[name]={}
+        if self.server_name not in LATENCY_DICT.keys():
+            LATENCY_DICT[self.server_name]={}
+                    
+        LATENCY_DICT['server_0']={client_name: timedelta(seconds=0.1) for client_name in active_clients_list}
+        for client_name in active_clients_list:
+            LATENCY_DICT[client_name]['server_0'] = timedelta(seconds= np.random.random())
         
     def set_agentsDict(self, agents_dict):
         self.agents_dict = agents_dict
@@ -90,8 +84,8 @@ class Server():
         converged_clients = {} # client đã hội tụ (removed)
         active_clients_list = self.active_clients_list
         
-        print("Đã vào InitLoop: ",active_clients_list)
         for iteration in range(1, num_iterations+1):
+            print("============================= Đang chạy Iteration "+str(iteration)+"=============================")
             weights = {}
             biases = {}
             
@@ -177,7 +171,8 @@ class Server():
                     msg = Message(sender_name=self.server_name, recipient_name=client_name, body=body)
                     arguments.append((clientObject, msg))
                 __ = calling_removing_pool.map(client_drop_caller, arguments)
-               
+            
+            print("============================= Kết thúc Iteration "+str(iteration)+"=============================")
         
         print(converged_clients)
         return None    
@@ -197,5 +192,5 @@ class Server():
             fed_acc.append(list(clientObject.global_accuracy.values()))
             client_accs.append(list(clientObject.local_accuracy.values()))
 
-        print('Federated accuracies are {}'.format(dict(zip(self.agents_dict['client'], fed_acc))))
+        print('Client\'s Accuracies are {}'.format(dict(zip(self.agents_dict['client'], fed_acc))))
         return None

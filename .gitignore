@@ -8,3 +8,6 @@ Processed_Data/
 
 # bỏ qua file py thành thư viện
 __pycache__
+client_0_log
+client_1_log
+client_2_log
