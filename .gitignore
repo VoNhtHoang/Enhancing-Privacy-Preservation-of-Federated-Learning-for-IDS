@@ -6,3 +6,5 @@ Processed_Data/
 *.db
 *.h5
 
+# bỏ qua file py thành thư viện
+__pycache__

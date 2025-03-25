@@ -24,11 +24,12 @@ serverObjects = {server_name: Server(server_name=server_name, \
 clientObjects = {client_name: Client(client_name, [], [], \
                         active_clients_list = active_clients_list) \
                         for clientID, client_name in enumerate(active_clients_list)}
+
 # lưu dict
 agents_dict['server'] = serverObjects
 agents_dict['client'] = clientObjects
 
-#
+# init agents_dict vừa tạo vào client, server
 for agent_name, agent in serverObjects.items():
     agent.set_agentsDict(agents_dict=agents_dict)
 for agent_name, agent in clientObjects.items():
@@ -36,3 +37,11 @@ for agent_name, agent in clientObjects.items():
 
 client_name = 'client_1'
 print("Agent_Dict: ", agents_dict['client'][client_name])
+
+server = agents_dict['server']['server_0']
+
+
+if __name__ == '__main__':
+    server.InitLoop()
+    server.final_statistics()
+    

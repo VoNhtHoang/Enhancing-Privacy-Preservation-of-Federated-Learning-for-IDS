@@ -38,18 +38,19 @@ class Client():
         ## global
         self.global_weights = {}
         self.global_biases = {}
-        self.global_accuracy = 0.0
+        self.global_accuracy = {}
         
         ## local
         self.local_weights = {}
         self.local_biases = {}
-        self.local_accuracy = 0.0
-        self.compute_time = {} # proc weight
+        self.local_accuracy = {}
+        self.compute_times = {} # proc weight
         
         # dp parameter
         self.alpha = 1.0
-        self.espilon = 1.0
+        self.epsilon = 1.0
         self.mean = 0
+        self.len_per_iteration = 50
         self.local_weights_noise ={}
         self.local_biases_noise = {}
         
@@ -85,7 +86,7 @@ class Client():
         len_per_iteration = 50 # data_train / iteration
         
         sensitivity =  2 / (len(self.active_clients_list)
-                          *len_per_iteration*self.alpha)
+                          *self.len_per_iteration*self.alpha)
         
         for i in range(weights_shape[0]):  # weights_modified is 2-D
             for j in range(weights_shape[1]):
@@ -108,25 +109,18 @@ class Client():
         weights_with_noise += weights_dp_noise
         self.local_biases_noise[iteration] = biases_dp_noise
         biases_with_noise += biases_dp_noise
+    
         return weights_with_noise, biases_with_noise
     
-    def model_fit(iteration):
+    def model_fit(self, iteration):
         model = load_model("cnn_model_2-0_batch512_test015.h5")
 
-        import numpy as np
-
-        weights_list = []
-        biases_list = []
-
-        for layer in model.layers:
-            if len(layer.get_weights()) == 2:  # Chỉ lấy các layer có weights & biaseses
-                weights, biases = layer.get_weights()
-                weights_list.append(weights)
-                biases_list.append(biases)
-
+        last_layer = model.layers[-1]
+        weights, biases = last_layer.get_weights()
+                
         return weights, biases
-    
     def proc_weights(self, message):
+        
         start_time = datetime.now()
         body = message.body
         iteration, lock, simulated_time = body['iteration'], body['lock'], body['simulated_time']
@@ -142,12 +136,13 @@ class Client():
         self.local_biases[iteration] = biases
 
         final_weights, final_biases = copy.deepcopy(weights), copy.deepcopy(biases)
-
+        
         # add noise lock để đảm bảo không xung đột
         lock.acquire()  # for random seed
         final_weights, final_biases = \
-            self.add_noise(weights=weights, biases=biases, iteration=iteration)
+            self.add_gamma_noise(local_weights=weights, local_biases=biases, iteration=iteration)
         lock.release()
+        
         
         #end
         end_time = datetime.now()
@@ -160,21 +155,22 @@ class Client():
         body = {'weights': final_weights, 'biases': final_biases, 'iter': iteration,
                 'compute_time': compute_time, 'simulated_time': simulated_time}  # generate body
 
+        print(self.client_name + "Come end!")
         msg = Message(sender_name=self.client_name, recipient_name=self.agents_dict['server']['server_0'], body=body)
         return msg
 
     def recv_weights(self, message):
         body = message.body
         iteration, return_weights, return_biases, simulated_time \
-        = body['iteration'], body['return_weights'],
-        body['return_biases'], body['simulated_time']
+        = body['iteration'], body['return_weights'], body['return_biases'], body['simulated_time']
         
         return_weights = copy.deepcopy(return_weights)
         return_biases = copy.deepcopy(return_biases)
         
         ## remove dp
-        return_weights -= self.weights_dp_noise[iteration] / len(self.active_clients_list)
-        return_biases -= self.biases_dp_noise[iteration] / len(self.active_clients_list)
+        return_weights -= self.local_weights_noise[iteration] / len(self.active_clients_list)
+        return_biases -= self.local_biases_noise[iteration] / len(self.active_clients_list)
+        # / len(self.active_clients_list)
         
         self.global_weights[iteration] = return_weights
         self.global_biases[iteration]  = return_biases
@@ -186,14 +182,14 @@ class Client():
         converged = self.check_convergence((local_weights, local_biases), (
             return_weights, return_biases))  # check whether weights have converged
         
-        local_accuracy = self.evaluator.accuracy(local_weights, local_biases)
-        global_accuracy = self.evaluator.accuracy(return_weights, return_biases)
+        local_accuracy = self.evaluate_accuracy(local_weights, local_biases)
+        global_accuracy = self.evaluate_accuracy(return_weights, return_biases)
         
         
         self.local_accuracy[iteration] = local_accuracy
         self.global_accuracy[iteration] = global_accuracy
 
-        args = [self.name, iteration, local_accuracy, global_accuracy]
+        args = [self.client_name, iteration, local_accuracy, global_accuracy]
         iteration_report = 'Performance Metrics for {} on iteration {} \n' \
                            '------------------------------------------- \n' \
                            'local accuracy: {} \n' \
@@ -214,7 +210,7 @@ class Client():
                             'simulated_time': simulated_time + LATENCY_DICT[self.client_name]['server_0']})
         return msg
         
-    def evaluate_accuracy(local_weights, local_biases):
+    def evaluate_accuracy(self, local_weights, local_biases):
         # self.logisticRegr.coef_ = weights  # override weights and coefficients
         # self.logisticRegr.intercept_ = biases
         # return self.logisticRegr.score(self.X_test, self.Y_test)
@@ -232,7 +228,7 @@ class Client():
     def remove_active_clients(self, message):
         body = message.body
         clients_to_remove, simulated_time, iteration \
-        = body['clients_to_remove'], body['simulated_time'], body['iteration']
+        = body['removing_clients'], body['simulated_time'], body['iteration']
         
         print(f'[{self.client_name}] :Simulated time for client {clients_to_remove} to finish iteration {iteration}: {simulated_time}\n')
 

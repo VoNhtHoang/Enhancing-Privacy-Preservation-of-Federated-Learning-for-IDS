@@ -13,6 +13,23 @@ from multiprocessing.pool import ThreadPool
 
 
 ###
+def client_compute_caller(input_tuple):
+    clientObject, message = input_tuple
+    return clientObject.proc_weights(message=message)
+
+# def client_compute_caller(clientObject, message):
+#     return clientObject.proc_weights(message=message)
+
+def client_weights_returner(input_tuple):
+    clientObject, message = input_tuple
+    return clientObject.recv_weights(message)
+    # return converged
+
+def client_drop_caller(input_tuple):
+    clientObject, message = input_tuple
+    return clientObject.remove_active_clients(message)
+
+    
 def find_slowest_time(messages):
     simulated_communication_times = {message.sender: message.body['simulated_time'] for message in messages}
     slowest_client = max(simulated_communication_times, key=simulated_communication_times.get)
@@ -66,49 +83,34 @@ class Server():
     
     def initIterations():
         return None
-    
-    def client_compute_caller(input_tuple):
-        clientObject, message = input_tuple
-        return_message = clientObject.proc_weights(message=message)
-        return return_message
 
-
-    def client_weights_returner(input_tuple):
-        clientObject, message = input_tuple
-        converged = clientObject.recv_weights(message)
-        return converged
-
-
-    def client_agent_dropout_caller(input_tuple):
-        clientObject, message = input_tuple
-        __ = clientObject.remove_active_clients(message)
-        return None
 
 
     def InitLoop(self):
-        converged_clients = {}
+        converged_clients = {} # client đã hội tụ (removed)
         active_clients_list = self.active_clients_list
         
+        print("Đã vào InitLoop: ",active_clients_list)
         for iteration in range(1, num_iterations+1):
             weights = {}
             biases = {}
             
             m = multiprocessing.Manager()
             
-            lock = m.lock()
+            lock = m.Lock()
             
             with ThreadPool(len(active_clients_list)) as calling_init_pool:
                 arguments = []
                 
                 for client_name in active_clients_list:
-                    clientObject = self.agents_dict['cliennt'][client_name]
+                    clientObject = self.agents_dict['client'][client_name]
                     
                     body = {'iteration': iteration, 'lock': lock, 'simulated_time': LATENCY_DICT[self.server_name][client_name]}
                     #message from server to client
                     msg = Message(sender_name=self.server_name, recipient_name=client_name, body = body)
                     
                     arguments.append((clientObject, msg))
-                calling_returned_messages = calling_init_pool.map(self.client_compute_caller, arguments)
+                calling_returned_messages = calling_init_pool.map(client_compute_caller, arguments)
             
             
             start_call_time = datetime.now()
@@ -133,13 +135,13 @@ class Server():
                 for client_name in active_clients_list:
                     clientObject = self.agents_dict['client'][client_name]
                     
-                    body = {'iteration': iteration, 'return_weights' : self.global_weights, 
-                            'return-biases': self.global_biases, 'simulated_time': simulated_time}
+                    body = {'iteration': iteration, 'return_weights' : self.global_weights[iteration], 
+                            'return_biases': self.global_biases[iteration], 'simulated_time': simulated_time}
                     
                     msg = Message(sender_name=self.server_name, recipient_name=client_name, body=body)
                     
                     arguments.append((clientObject, msg))
-                returned_messages = returning_pool.map(self.client_weights_returner, arguments)
+                returned_messages = returning_pool.map(client_weights_returner, arguments)
             
             
             simulated_time = find_slowest_time(returned_messages)
@@ -156,29 +158,44 @@ class Server():
             server_logic_time = end_call_time - start_call_time
             simulated_time += server_logic_time #Tổng thời gian cho đến bước này
             
-            active_clients_list -= removing_clients
+            # bỏ client nếu nó hội tụ
+            active_clients_list = [active_client for active_client in active_clients_list if active_client not in removing_clients]
             
+            # nếu số client nhỏ hơn 2, dừng được rồi
             if len(active_clients_list) < 2:
-                self.print
+                self.get_convergences(converged_clients)
+                return
             
-            
-    def print_convergences(self, converged):
-        for client_name in self.
-            if client_name in converged:
-                print('Client {} converged on iteration {}'.format(client_name, converged[client_name]))
-            if client_name not in converged:
-                print('Client {} never converged'.format(client_name))
+            with ThreadPool(len(active_clients_list)) as calling_removing_pool:
+                arguments = []
+                
+                for client_name in active_clients_list:
+                    clientObject = self.agents_dict['client'][client_name]
+                    
+                    body = {'iteration': iteration, 'removing_clients': removing_clients,\
+                        'simulated_time': simulated_time + LATENCY_DICT[self.server_name][client_name]}
+                    msg = Message(sender_name=self.server_name, recipient_name=client_name, body=body)
+                    arguments.append((clientObject, msg))
+                __ = calling_removing_pool.map(client_drop_caller, arguments)
+               
+        
+        print(converged_clients)
+        return None    
+    
+    def get_convergences(self, converged_clients):
+        for client_name in self.active_clients_list:
+            if client_name in converged_clients:
+                print(f'Client {client_name} converged on iteration {converged_clients[client_name]}')
+            else:
+                print(f'Client {client_name} never converged')
+        return None
 
     def final_statistics(self):
-        """
-        USED FOR RESEARCH PURPOSES.
-        """
-        # for research purposes
         client_accs = []
         fed_acc = []
-        for client_name, client_instance in self.directory.clients.items():
-            fed_acc.append(list(client_instance.federated_accuracy.values()))
-            client_accs.append(list(client_instance.personal_accuracy.values()))
+        for client_name, clientObject in self.agents_dict['client'].items():
+            fed_acc.append(list(clientObject.global_accuracy.values()))
+            client_accs.append(list(clientObject.local_accuracy.values()))
 
-        
-        print('Federated accuracies are {}'.format(dict(zip(self.directory.clients, fed_acc))))
+        print('Federated accuracies are {}'.format(dict(zip(self.agents_dict['client'], fed_acc))))
+        return None
