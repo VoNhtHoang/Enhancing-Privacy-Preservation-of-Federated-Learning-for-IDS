@@ -1,0 +1,223 @@
+============================= Đang chạy Iteration 1=============================
+Input Shape: (46, 1)
+Input Shape: (46, 1)
+Input Shape: (46, 1)
+Epoch 1/5
+Epoch 1/5
+Epoch 1/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 38s 23ms/step - accuracy: 0.6687 - loss: 1.0676
+Epoch 2/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 33s 24ms/step - accuracy: 0.7581 - loss: 0.7170
+2751/2800 ━━━━━━━━━━━━━━━━━━━━ 1s 24ms/step - accuracy: 0.6996 - loss: 0.9473Epoch 3/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 73s 24ms/step - accuracy: 0.7004 - loss: 0.9444
+  50/1400 ━━━━━━━━━━━━━━━━━━━━ 36s 27ms/step - accuracy: 0.7635 - loss: 0.7077Epoch 2/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 45s 32ms/step - accuracy: 0.7605 - loss: 0.7027
+Epoch 4/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 120s 27ms/step - accuracy: 0.7177 - loss: 0.8782
+Epoch 2/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 46s 33ms/step - accuracy: 0.7614 - loss: 0.6931
+Epoch 5/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 91s 32ms/step - accuracy: 0.7591 - loss: 0.7065
+Epoch 3/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 51s 37ms/step - accuracy: 0.7624 - loss: 0.6866
+1364/2800 ━━━━━━━━━━━━━━━━━━━━ 53s 37ms/step - accuracy: 0.7618 - loss: 0.7014
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+1372/2800 ━━━━━━━━━━━━━━━━━━━━ 52s 37ms/step - accuracy: 0.7618 - loss: 0.7014client_0Come end!
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 78s 28ms/step - accuracy: 0.7617 - loss: 0.6984
+Epoch 4/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 123s 29ms/step - accuracy: 0.7612 - loss: 0.6927
+Epoch 3/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 71s 25ms/step - accuracy: 0.7598 - loss: 0.6849
+Epoch 5/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 100s 24ms/step - accuracy: 0.7599 - loss: 0.6808
+Epoch 4/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 61s 22ms/step - accuracy: 0.7575 - loss: 0.6734
+1324/4200 ━━━━━━━━━━━━━━━━━━━━ 1:06 23ms/step - accuracy: 0.7585 - loss: 0.6563
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+1328/4200 ━━━━━━━━━━━━━━━━━━━━ 1:06 23ms/step - accuracy: 0.7585 - loss: 0.6563client_1Come end!
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 82s 20ms/step - accuracy: 0.7587 - loss: 0.6597
+Epoch 5/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 93s 22ms/step - accuracy: 0.7645 - loss: 0.6772
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+client_2Come end!
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 12s 61ms/step - accuracy: 0.7615 - loss: 0.7330
+ 96/100 ━━━━━━━━━━━━━━━━━━━━ 0s 66ms/step - accuracy: 0.7599 - loss: 0.6391
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 12s 65ms/step - accuracy: 0.7599 - loss: 0.6393
+100/100 ━━━━━━━━━━━━━━━━━━━━ 13s 67ms/step - accuracy: 0.7514 - loss: 0.7202
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 9s 41ms/step - accuracy: 0.7438 - loss: 1.2295
+Arguments:  Performance Metrics for client_0 on iteration 1 
+------------------------------------------- 
+local accuracy: 0.7635565400123596 
+global accuracy: 0.7466399669647217 
+local compute time: 0:03:38.465291 
+Simulated time to receive global weights: 0:08:44.206190 
+ 
+
+100/100 ━━━━━━━━━━━━━━━━━━━━ 9s 39ms/step - accuracy: 0.7539 - loss: 1.0183
+Arguments:  Performance Metrics for client_1 on iteration 1 
+------------------------------------------- 
+local accuracy: 0.7589614987373352 
+global accuracy: 0.7537379860877991 
+local compute time: 0:06:18.208291 
+Simulated time to receive global weights: 0:08:44.206190 
+ 
+
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 6s 33ms/step - accuracy: 0.7536 - loss: 1.0040
+Arguments:  Performance Metrics for client_2 on iteration 1 
+------------------------------------------- 
+local accuracy: 0.7519413232803345 
+global accuracy: 0.7539314031600952 
+local compute time: 0:08:43.411798 
+Simulated time to receive global weights: 0:08:44.206190 
+ 
+
+[client_0] :Simulated time for client set() to finish iteration 1: 0:09:14.743437
+
+[client_1] :Simulated time for client set() to finish iteration 1: 0:09:14.743437
+
+[client_2] :Simulated time for client set() to finish iteration 1: 0:09:14.743437
+
+============================= Kết thúc Iteration 1=============================
+============================= Đang chạy Iteration 2=============================
+Input Shape: (46, 1)Input Shape: (46, 1)
+
+Input Shape: (46, 1)
+2 Come here!2 Come here!
+
+2 Come here!
+Epoch 1/5
+Epoch 1/5
+...
+2738/2800 ━━━━━━━━━━━━━━━━━━━━ 3s 63ms/step - accuracy: 0.7608 - loss: 0.6959Epoch 5/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 176s 63ms/step - accuracy: 0.7608 - loss: 0.6957
+  60/1400 ━━━━━━━━━━━━━━━━━━━━ 1:27 65ms/step - accuracy: 0.7693 - loss: 0.6818Epoch 3/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 87s 62ms/step - accuracy: 0.7631 - loss: 0.6831
+2611/4200 ━━━━━━━━━━━━━━━━━━━━ 1:39 63ms/step - accuracy: 0.7596 - loss: 0.7027
+Output is truncated. View as a scrollable element or open in a text editor. Adjust cell output settings...
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+2615/4200 ━━━━━━━━━━━━━━━━━━━━ 1:39 63ms/step - accuracy: 0.7596 - loss: 0.7027client_0Come end!
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 132s 47ms/step - accuracy: 0.7632 - loss: 0.6829
+Epoch 4/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 217s 52ms/step - accuracy: 0.7597 - loss: 0.7005
+Epoch 3/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 95s 34ms/step - accuracy: 0.7584 - loss: 0.6773
+Epoch 5/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 150s 36ms/step - accuracy: 0.7599 - loss: 0.6797
+Epoch 4/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 104s 37ms/step - accuracy: 0.7579 - loss: 0.6656
+1252/4200 ━━━━━━━━━━━━━━━━━━━━ 1:44 35ms/step - accuracy: 0.7581 - loss: 0.6571
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+1261/4200 ━━━━━━━━━━━━━━━━━━━━ 1:44 35ms/step - accuracy: 0.7581 - loss: 0.6571client_1Come end!
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 101s 24ms/step - accuracy: 0.7586 - loss: 0.6545
+Epoch 5/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 81s 19ms/step - accuracy: 0.7582 - loss: 0.6959
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+client_2Come end!
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 11s 57ms/step - accuracy: 0.7620 - loss: 0.7049
+ 87/100 ━━━━━━━━━━━━━━━━━━━━ 0s 63ms/step - accuracy: 0.8037 - loss: 0.6014
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 11s 58ms/step - accuracy: 0.8035 - loss: 0.6010
+ 86/100 ━━━━━━━━━━━━━━━━━━━━ 0s 68ms/step - accuracy: 0.7628 - loss: 0.6424
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 12s 65ms/step - accuracy: 0.7627 - loss: 0.6431
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 11s 57ms/step - accuracy: 0.7527 - loss: 0.7716
+Arguments:  Performance Metrics for client_0 on iteration 2 
+------------------------------------------- 
+local accuracy: 0.7636730670928955 
+global accuracy: 0.7546418309211731 
+local compute time: 0:07:13.455867 
+Simulated time to receive global weights: 0:13:41.794739 
+ 
+
+100/100 ━━━━━━━━━━━━━━━━━━━━ 11s 55ms/step - accuracy: 0.7572 - loss: 0.7367
+Arguments:  Performance Metrics for client_2 on iteration 2 
+------------------------------------------- 
+local accuracy: 0.8022202849388123 
+global accuracy: 0.7572091817855835 
+local compute time: 0:13:41.001871 
+Simulated time to receive global weights: 0:13:41.794739 
+ 
+
+100/100 ━━━━━━━━━━━━━━━━━━━━ 10s 51ms/step - accuracy: 0.7506 - loss: 0.7049
+Arguments:  Performance Metrics for client_1 on iteration 2 
+------------------------------------------- 
+local accuracy: 0.7623791098594666 
+global accuracy: 0.7512330412864685 
+local compute time: 0:11:21.448459 
+Simulated time to receive global weights: 0:13:41.794739 
+...
+Epoch 3/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 96s 68ms/step - accuracy: 0.7623 - loss: 0.6874
+Epoch 5/5
+1400/1400 ━━━━━━━━━━━━━━━━━━━━ 94s 67ms/step - accuracy: 0.7628 - loss: 0.6808
+1691/2800 ━━━━━━━━━━━━━━━━━━━━ 1:12 65ms/step - accuracy: 0.7624 - loss: 0.6821
+Output is truncated. View as a scrollable element or open in a text editor. Adjust cell output settings...
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+3076/4200 ━━━━━━━━━━━━━━━━━━━━ 1:13 66ms/step - accuracy: 0.7614 - loss: 0.6917client_0Come end!
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 155s 55ms/step - accuracy: 0.7619 - loss: 0.6799
+Epoch 4/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 247s 59ms/step - accuracy: 0.7614 - loss: 0.6906
+Epoch 3/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 113s 40ms/step - accuracy: 0.7599 - loss: 0.6700
+2783/4200 ━━━━━━━━━━━━━━━━━━━━ 57s 40ms/step - accuracy: 0.7603 - loss: 0.6804Epoch 5/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 170s 40ms/step - accuracy: 0.7599 - loss: 0.6784
+Epoch 4/5
+2800/2800 ━━━━━━━━━━━━━━━━━━━━ 116s 41ms/step - accuracy: 0.7577 - loss: 0.6954
+1378/4200 ━━━━━━━━━━━━━━━━━━━━ 2:00 43ms/step - accuracy: 0.7654 - loss: 0.6607
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+1382/4200 ━━━━━━━━━━━━━━━━━━━━ 1:59 43ms/step - accuracy: 0.7654 - loss: 0.6608client_1Come end!
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 127s 30ms/step - accuracy: 0.7650 - loss: 0.6706
+Epoch 5/5
+4200/4200 ━━━━━━━━━━━━━━━━━━━━ 102s 24ms/step - accuracy: 0.7583 - loss: 0.6947
+WARNING:absl:You are saving your model as an HDF5 file via `model.save()` or `keras.saving.save_model(model)`. This file format is considered legacy. We recommend using instead the native Keras format, e.g. `model.save('my_model.keras')` or `keras.saving.save_model(model, 'my_model.keras')`. 
+client_2Come end!
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 11s 59ms/step - accuracy: 0.7551 - loss: 0.7294
+ 94/100 ━━━━━━━━━━━━━━━━━━━━ 0s 62ms/step - accuracy: 0.7608 - loss: 0.7574
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 12s 60ms/step - accuracy: 0.7609 - loss: 0.7567
+100/100 ━━━━━━━━━━━━━━━━━━━━ 12s 65ms/step - accuracy: 0.7646 - loss: 0.6784
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+100/100 ━━━━━━━━━━━━━━━━━━━━ 10s 50ms/step - accuracy: 0.7505 - loss: 0.7606
+Arguments:  Performance Metrics for client_2 on iteration 3 
+------------------------------------------- 
+local accuracy: 0.7557458877563477 
+global accuracy: 0.7508096694946289 
+local compute time: 0:14:56.595638 
+Simulated time to receive global weights: 0:14:57.388506 
+ 
+
+100/100 ━━━━━━━━━━━━━━━━━━━━ 10s 49ms/step - accuracy: 0.7492 - loss: 0.7901
+Arguments:  Performance Metrics for client_0 on iteration 3 
+------------------------------------------- 
+local accuracy: 0.7626631259918213 
+global accuracy: 0.7513400912284851 
+local compute time: 0:07:31.920132 
+Simulated time to receive global weights: 0:14:57.388506 
+ 
+
+100/100 ━━━━━━━━━━━━━━━━━━━━ 10s 44ms/step - accuracy: 0.7566 - loss: 0.7128
+Arguments:  Performance Metrics for client_1 on iteration 3 
+------------------------------------------- 
+local accuracy: 0.764340341091156 
+global accuracy: 0.756747841835022 
+local compute time: 0:12:05.599321 
+Simulated time to receive global weights: 0:14:57.388506 
+...
+
+============================= Kết thúc Iteration 3=============================
+{}
+Client's Accuracies are {'client_0': [0.7466399669647217, 0.7546418309211731, 0.7513400912284851], 'client_1': [0.7537379860877991, 0.7512330412864685, 0.756747841835022], 'client_2': [0.7539314031600952, 0.7572091817855835, 0.7508096694946289]}

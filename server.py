@@ -2,15 +2,12 @@ import sys
 sys.path.append('..')
 
 import numpy as np
+import tenseal as ts
 from datetime import datetime, timedelta
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 
-
 ###
-
-
-
 
 ###
 def client_compute_caller(input_tuple):
@@ -53,8 +50,11 @@ class Server():
         self.server_name = server_name
         self.global_weights = {}
         self.global_biases = {}
+        self.global_weights_original_shape = {}
         self.active_clients_list = active_clients_list
         self.agents_dict = {}
+        self.global_accuracy = {}
+        self.global_loss = {}
         
         for name in active_clients_list:
             if name not in LATENCY_DICT.keys():
@@ -77,21 +77,51 @@ class Server():
     
     def initIterations():
         return None
-
-
+    
+    def average_encrypted_params(self, messages):
+        # temp_sum_weights = sum(message.body['weights'] for message in calling_returned_messages)
+        # temp_sum_biases = sum(message.body['biases'] for message in calling_returned_messages)
+        
+        # self.global_weights[iteration] = temp_sum_weights/len(self.active_clients_list)
+        # self.global_biases[iteration] = temp_sum_biases/len(self.active_clients_list)
+        
+        message_0 = messages[0]
+        encrypted_weights = ts.lazy_ckks_vector_from(message_0.body['encrypted_weights'])
+        encrypted_biases = ts.lazy_ckks_vector_from(message_0.body['encrypted_biases'])
+        context = ts.context_from(message_0.body['context'])
+        
+        encrypted_weights.link_context(context)
+        encrypted_biases.link_context(context)
+        encrypted_weights_sum = encrypted_weights
+        encrypted_biases_sum = encrypted_biases
+        
+        for message in messages[1:]:
+            encrypted_weights = ts.lazy_ckks_vector_from(message.body['encrypted_weights'])
+            encrypted_biases = ts.lazy_ckks_vector_from(message.body['encrypted_biases'])
+            context = ts.context_from(message.body['context'])
+            encrypted_weights.link_context(context)
+            encrypted_biases.link_context(context)
+            encrypted_weights_sum += encrypted_weights
+            encrypted_biases_sum += encrypted_biases
+        
+        avg_encrypted_weights = encrypted_weights_sum* (1/len(self.active_clients_list))
+        avg_encrypted_biases = encrypted_biases_sum* (1/len(self.active_clients_list))
+        
+        return avg_encrypted_weights.serialize(), avg_encrypted_biases.serialize()
 
     def InitLoop(self):
         converged_clients = {} # client đã hội tụ (removed)
         active_clients_list = self.active_clients_list
         
         for iteration in range(1, num_iterations+1):
-            print("============================= Đang chạy Iteration "+str(iteration)+"=============================")
+            print("====================================== Đang chạy Iteration "+str(iteration)+" ======================================")
             weights = {}
             biases = {}
             
             m = multiprocessing.Manager()
-            
-            lock = m.Lock()
+            lock = m.Lock() # thực hiện tránh xung đột tài nguyên nếu cần
+
+######################################    CALL CLIENTS CREATE WEIGHTS&BIAS    ######################################################                 
             
             with ThreadPool(len(active_clients_list)) as calling_init_pool:
                 arguments = []
@@ -110,18 +140,18 @@ class Server():
             start_call_time = datetime.now()
             simulated_time = find_slowest_time(calling_returned_messages)
             
-            temp_sum_weights = sum(message.body['weights'] for message in calling_returned_messages)
-            temp_sum_biases = sum(message.body['biases'] for message in calling_returned_messages)
-            
-            self.global_weights[iteration] = temp_sum_weights/len(self.active_clients_list)
-            self.global_biases[iteration] = temp_sum_biases/len(self.active_clients_list)
+            # truong hop nay cac weights shape đến từ client đều giống nhau
+            self.global_weights_original_shape[iteration] = calling_returned_messages[0].body['weights_original_shape']
+            self.global_weights[iteration], self.global_biases[iteration] = self.average_encrypted_params(calling_returned_messages)
             
             # add time server logic takes
             end_call_time = datetime.now()
             server_logic_time = end_call_time - start_call_time
             simulated_time += server_logic_time #Tổng thời gian cho đến bước này
+######################################    CALL CLIENTS CREATE WEIGHTS&BIAS    ######################################################                 
+
             
-            
+######################################    RETURN NEW WEIGHTS    ######################################################            
             # Trả weights với bias trung bình mới về client 
             with ThreadPool(len(active_clients_list)) as returning_pool:
                 arguments = []
@@ -129,8 +159,11 @@ class Server():
                 for client_name in active_clients_list:
                     clientObject = self.agents_dict['client'][client_name]
                     
-                    body = {'iteration': iteration, 'return_weights' : self.global_weights[iteration], 
-                            'return_biases': self.global_biases[iteration], 'simulated_time': simulated_time}
+                    body = {'weights_original_shape': self.global_weights_original_shape[iteration],
+                            'iteration': iteration,
+                            'encrypted_weights' : self.global_weights[iteration], 
+                            'encrypted_biases': self.global_biases[iteration],
+                            'simulated_time': simulated_time}
                     
                     msg = Message(sender_name=self.server_name, recipient_name=client_name, body=body)
                     
@@ -138,7 +171,7 @@ class Server():
                 returned_messages = returning_pool.map(client_weights_returner, arguments)
             
             
-            simulated_time = find_slowest_time(returned_messages)
+            simulated_time += find_slowest_time(returned_messages) # Tổng tg cho đến bước này 
             start_return_time = datetime.now()
             
             removing_clients = set()
@@ -148,8 +181,8 @@ class Server():
                     converged_clients[message.sender] = iteration
                     removing_clients.add(message.sender)
                     
-            end_call_time = datetime.now()
-            server_logic_time = end_call_time - start_call_time
+            end_return_time = datetime.now()
+            server_logic_time = end_return_time - start_return_time
             simulated_time += server_logic_time #Tổng thời gian cho đến bước này
             
             # bỏ client nếu nó hội tụ
@@ -159,7 +192,10 @@ class Server():
             if len(active_clients_list) < 2:
                 self.get_convergences(converged_clients)
                 return
-            
+######################################    RETURN NEW WEIGHTS    ######################################################     
+
+
+######################################    REMOVE CLIENTS IF NEEDED    ######################################################                 
             with ThreadPool(len(active_clients_list)) as calling_removing_pool:
                 arguments = []
                 
@@ -172,11 +208,13 @@ class Server():
                     arguments.append((clientObject, msg))
                 __ = calling_removing_pool.map(client_drop_caller, arguments)
             
-            print("============================= Kết thúc Iteration "+str(iteration)+"=============================")
+            print("====================================== Kết thúc Iteration "+str(iteration)+" ======================================")
         
         print(converged_clients)
         return None    
-    
+######################################    REMOVE CLIENTS IF NEEDED    ######################################################                 
+
+
     def get_convergences(self, converged_clients):
         for client_name in self.active_clients_list:
             if client_name in converged_clients:
