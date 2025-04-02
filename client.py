@@ -25,7 +25,7 @@ from dp_mechanisms import laplace
 ##### CODE SECTION
 LATENCY_DICT = {}
 
-tolerance_left_edge = 0.5
+tolerance_left_edge = 0.2
 tolerance_right_edge=2.0
 class Message:
     def __init__(self, sender_name, recipient_name, body):
@@ -37,8 +37,7 @@ class Message:
         return "Message from {self.sender} to {self.recipient}.\n Body is : {self.body} \n \n"
 
 class Client():
-    def __init__(self, client_name, data_train, data_test, \
-        active_clients_list):
+    def __init__(self, client_name, data_train, data_test, active_clients_list, he_context):
         self.client_name = client_name
         self.active_clients_list = active_clients_list
         self.data_train = data_train
@@ -57,7 +56,7 @@ class Client():
         self.local_biases = {}
         self.local_accuracy = {}
         self.compute_times = {} # proc weight
-        self.he_context = self.init_he_context()
+        self.he_context = he_context
         
         # dp parameter
         self.alpha = 1.0
@@ -100,10 +99,10 @@ class Client():
         weights_flat = weights.flatten()
         
         # Mã hóa
-        encrypted_weights = ts.ckks_vector(self.he_context, weights_flat).serialize()
-        encrypted_biases = ts.ckks_vector(self.he_context, biases).serialize()
+        encrypted_weights = ts.ckks_vector(self.he_context, weights_flat)
+        encrypted_biases = ts.ckks_vector(self.he_context, biases)
         
-        return encrypted_weights, encrypted_biases
+        return encrypted_weights.serialize(), encrypted_biases.serialize()
     
     def he_params_decryption(self, encrypted_weights, encrypted_biases, weights_original_shape):
         """Giải mã weights và biases"""
@@ -232,6 +231,30 @@ class Client():
         final_encrypted_weights, final_encrypted_biases = self.he_params_encryption(final_weights, final_biases)         
         lock.release()
         
+        # print("Weights ", final_weights)
+        # temp_context = self.he_context.serialize(save_secret_key= False)
+        # tmp_context = ts.context_from(temp_context)
+        # temp_enc_w = ts.lazy_ckks_vector_from(final_encrypted_weights)
+        # temp_enc_w.link_context(tmp_context)
+        # temp_enc_w *=2
+        # temp_enc_b = ts.lazy_ckks_vector_from(final_encrypted_biases)
+        # temp_enc_b.link_context(tmp_context)
+        # temp_enc_b *=2
+        
+        # enc_w = temp_enc_w.serialize()
+        # enc_b = temp_enc_b.serialize()
+        
+        # encrypted_weights = ts.lazy_ckks_vector_from(enc_w)
+        # encrypted_weights.link_context(self.he_context)
+        
+        # encrypted_biases = ts.lazy_ckks_vector_from(enc_b)
+        # encrypted_biases.link_context(self.he_context)
+        # weights_original_shape = final_weights.shape
+        # return_weights, return_biases = self.he_params_decryption(
+        #     encrypted_weights, encrypted_biases, weights_original_shape
+        # )
+        # print("Weight tets", return_weights)
+        
         #end
         end_time = datetime.now()
         compute_time = end_time - start_time
@@ -269,9 +292,8 @@ class Client():
         )
         
         ## remove dp
-        return_weights -= self.local_weights_noise[iteration] / len(self.active_clients_list)
+        return_weights -= self.local_weights_noise[iteration]/ len(self.active_clients_list)
         return_biases -= self.local_biases_noise[iteration] / len(self.active_clients_list)
-        # / len(self.active_clients_list)
         
         self.global_weights[iteration] = return_weights
         self.global_biases[iteration]  = return_biases
@@ -339,11 +361,13 @@ class Client():
 
         weights_differences = np.abs(global_weights - local_weights)
         biases_differences = np.abs(global_biases - local_biases)
-        
+
+        print("weights dif", weights_differences)
+        print("biases diff", biases_differences)
         if (weights_differences < tolerance_left_edge).all() and (biases_differences <tolerance_left_edge).all():
             return True
         elif (weights_differences > tolerance_right_edge).all() and (biases_differences > tolerance_right_edge).all():
-           return True     
+            return True     
         
         return False
 ############################################## CHECK HỘI TỤ ######################################################### 

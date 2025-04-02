@@ -78,6 +78,20 @@ class Server():
     def initIterations():
         return None
     
+####################################   HE CONTEXT  ###########################################
+    # def init_he_context(self):
+    #         """Thiết lập context mã hóa đồng hình"""
+    #         context = ts.context(
+    #             ts.SCHEME_TYPE.CKKS, # ckks cho số thực, bfv cho int
+    #             poly_modulus_degree=8192,
+    #             coeff_mod_bit_sizes=[60, 40, 40, 60]
+    #         )
+    #         context.generate_galois_keys()
+    #         context.global_scale = 2**40
+    #         return context
+
+####################################   HE CONTEXT   ##########################################
+    
     def average_encrypted_params(self, messages):
         # temp_sum_weights = sum(message.body['weights'] for message in calling_returned_messages)
         # temp_sum_biases = sum(message.body['biases'] for message in calling_returned_messages)
@@ -104,8 +118,8 @@ class Server():
             encrypted_weights_sum += encrypted_weights
             encrypted_biases_sum += encrypted_biases
         
-        avg_encrypted_weights = encrypted_weights_sum* (1/len(self.active_clients_list))
-        avg_encrypted_biases = encrypted_biases_sum* (1/len(self.active_clients_list))
+        avg_encrypted_weights = encrypted_weights_sum * (1/len(self.active_clients_list))
+        avg_encrypted_biases = encrypted_biases_sum * (1/len(self.active_clients_list))
         
         return avg_encrypted_weights.serialize(), avg_encrypted_biases.serialize()
 

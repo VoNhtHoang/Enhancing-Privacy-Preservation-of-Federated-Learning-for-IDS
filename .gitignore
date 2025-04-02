@@ -5,9 +5,13 @@ Processed_Data/
 # Bỏ qua all file *.db, *.h5
 *.db
 *.h5
+*.csv
 
 # bỏ qua file py thành thư viện
-__pycache__
-client_0_log
-client_1_log
-client_2_log
+__pycache__/
+client_0_log/
+client_1_log/
+client_2_log/
+log_mono/
+Result/
+TaiLieu/
