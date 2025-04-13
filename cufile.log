@@ -1,0 +1,26 @@
+ 12-04-2025 05:33:57:729 [pid=4933 tid=4933] ERROR  0:140 unable to load,  liburcu-bp.so.6 
+
+ 12-04-2025 05:33:57:729 [pid=4933 tid=4933] ERROR  0:140 unable to load,  liburcu-bp.so.1 
+
+ 12-04-2025 05:33:57:730 [pid=4933 tid=4933] WARN   0:168 failed to open /proc/driver/nvidia-fs/devcount  error: No such file or directory
+ 12-04-2025 05:33:57:730 [pid=4933 tid=4933] NOTICE  cufio-drv:727 running in compatible mode
+ 12-04-2025 05:33:57:730 [pid=4933 tid=4933] ERROR  cufio-plat:98 cannot open path /sys/bus/pci/devices/0000:02:00.0/resource No such file or directory
+ 12-04-2025 05:33:57:730 [pid=4933 tid=4933] WARN   cufio-plat:431 GPU index 0 NVIDIA GeForce GTX 1650 with Max-Q Design: Model Not Supported
+ 12-04-2025 05:33:57:731 [pid=4933 tid=4933] WARN   cufio-udev:168 failed in udev device create: /sys/bus/pci/devices/0000:02:00.0
+ 12-04-2025 05:33:57:854 [pid=4933 tid=4933] ERROR  cufio-topo-udev:431 no device entries present in platform topology
+ 12-04-2025 05:33:57:857 [pid=4933 tid=4933] ERROR  0:140 unable to load,  libnuma.so.1.0.0 
+
+ 12-04-2025 05:33:57:857 [pid=4933 tid=4933] ERROR  0:98 dlopen error libnuma.so.1.0.0: cannot open shared object file: No such file or directory
+ 13-04-2025 02:47:05:784 [pid=2170 tid=2170] ERROR  0:140 unable to load,  liburcu-bp.so.6 
+
+ 13-04-2025 02:47:05:784 [pid=2170 tid=2170] ERROR  0:140 unable to load,  liburcu-bp.so.1 
+
+ 13-04-2025 02:47:05:785 [pid=2170 tid=2170] WARN   0:168 failed to open /proc/driver/nvidia-fs/devcount  error: No such file or directory
+ 13-04-2025 02:47:05:785 [pid=2170 tid=2170] NOTICE  cufio-drv:727 running in compatible mode
+ 13-04-2025 02:47:05:785 [pid=2170 tid=2170] ERROR  cufio-plat:98 cannot open path /sys/bus/pci/devices/0000:02:00.0/resource No such file or directory
+ 13-04-2025 02:47:05:785 [pid=2170 tid=2170] WARN   cufio-plat:431 GPU index 0 NVIDIA GeForce GTX 1650 with Max-Q Design: Model Not Supported
+ 13-04-2025 02:47:05:785 [pid=2170 tid=2170] WARN   cufio-udev:168 failed in udev device create: /sys/bus/pci/devices/0000:02:00.0
+ 13-04-2025 02:47:05:875 [pid=2170 tid=2170] ERROR  cufio-topo-udev:431 no device entries present in platform topology
+ 13-04-2025 02:47:05:880 [pid=2170 tid=2170] ERROR  0:140 unable to load,  libnuma.so.1.0.0 
+
+ 13-04-2025 02:47:05:880 [pid=2170 tid=2170] ERROR  0:98 dlopen error libnuma.so.1.0.0: cannot open shared object file: No such file or directory

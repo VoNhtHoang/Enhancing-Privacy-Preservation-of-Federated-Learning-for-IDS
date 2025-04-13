@@ -157,15 +157,28 @@ class Client():
 ################################################ MODEL ###################################################
     def model_fit(self, iteration):
         file_path = self.temp_dir +"/Iteration_"+str(iteration)+".csv"
-        file_path_model = self.temp_dir+"/model_"+str(iteration)+".h5"
+        file_path_model = self.temp_dir+"/model_"+str(iteration)+".keras"
         
         features, labels = next(iter(self.data_train))
         input_shape = (features.shape[1], 1)
-        output_shape = labels.shape[1]
-        print(f"Input Shape: {input_shape}")
+        # output_shape = labels.shape[1]
 
         from tensorflow import keras
 
+        # model = keras.Sequential([
+        #     layers.Input(shape=input_shape),
+        #     layers.Conv1D(filters=32, kernel_size=3, padding="same", activation="relu"),
+        #     layers.MaxPooling1D(pool_size=4),
+        #     layers.Conv1D(filters=64, kernel_size=3,  padding="same",activation="relu"),
+        #     layers.MaxPooling1D(pool_size=2),
+        #     layers.Flatten(),
+        #     layers.Dense(128, activation='relu'),
+        #     layers.Dropout(0.5),
+        #     layers.BatchNormalization(),
+        #     layers.Dense(output_shape, activation='softmax')
+        # ])
+        
+        # =============  binary =====================
         model = keras.Sequential([
             layers.Input(shape=input_shape),
             layers.Conv1D(filters=32, kernel_size=3, padding="same", activation="relu"),
@@ -176,10 +189,12 @@ class Client():
             layers.Dense(128, activation='relu'),
             layers.Dropout(0.5),
             layers.BatchNormalization(),
-            layers.Dense(output_shape, activation='softmax')
+            layers.Dense(1, activation='sigmoid')  # dùng sigmoid thay cho softmax
         ])
+
+
         csv_logger = CSVLogger(file_path, append=True)
-        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         
         if iteration > 1:
             print(f"{iteration} Come here!")
@@ -334,7 +349,7 @@ class Client():
 
 ############################################## PREDICT + EVALUATE #########################################################          
     def evaluate_accuracy(self, local_weights, local_biases, iteration):
-        file_path_model = self.temp_dir+"/model_"+str(iteration)+".h5"
+        file_path_model = self.temp_dir+"/model_"+str(iteration)+".keras"
         model = load_model(file_path_model)
         model.layers[-1].set_weights([local_weights, local_biases])
         
