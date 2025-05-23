@@ -1,6 +1,8 @@
 # bỏ qua folder
 Dataset/
 Processed_Data/
+data/
+IoMT_Dataset
 
 # Bỏ qua all file *.db, *.h5
 *.db
@@ -8,3 +10,4 @@ Processed_Data/
 # bỏ qua file py thành thư viện
 __pycache__/
 TaiLieu/
+data.zip

@@ -25,7 +25,6 @@ def client_weights_returner(input_tuple):
 def client_drop_caller(input_tuple):
     clientObject, message = input_tuple
     return clientObject.remove_active_clients(message)
-
     
 def find_slowest_time(messages):
     simulated_communication_times = {message.sender: message.body['simulated_time'] for message in messages}
@@ -33,7 +32,7 @@ def find_slowest_time(messages):
     simulated_time = simulated_communication_times[slowest_client]  # simulated time it would take for server to receive all values
     return simulated_time
 
-num_iterations = 5
+num_iterations = 10
 LATENCY_DICT = {}
 
 class Message:
@@ -143,7 +142,10 @@ class Server():
                 for client_name in active_clients_list:
                     clientObject = self.agents_dict['client'][client_name]
                     
-                    body = {'iteration': iteration, 'lock': lock, 'simulated_time': LATENCY_DICT[self.server_name][client_name]}
+                    body = {'iteration': iteration, 
+                            'lock': lock, 
+                            'simulated_time': LATENCY_DICT[self.server_name][client_name]
+                            }
                     #message from server to client
                     msg = Message(sender_name=self.server_name, recipient_name=client_name, body = body)
                     
@@ -155,8 +157,8 @@ class Server():
             simulated_time = find_slowest_time(calling_returned_messages)
             
             # truong hop nay cac weights shape đến từ client đều giống nhau
-            self.global_weights_original_shape[iteration] = calling_returned_messages[0].body['weights_original_shape']
-            self.global_weights[iteration], self.global_biases[iteration] = self.average_encrypted_params(calling_returned_messages)
+            # self.global_weights_original_shape[iteration] = calling_returned_messages[0].body['weights_original_shape']
+            self.global_weights[iteration], self.global_biases[iteration] = self.average_encrypted_params(calling_returned_messages) 
             
             # add time server logic takes
             end_call_time = datetime.now()
@@ -169,13 +171,13 @@ class Server():
             # Trả weights với bias trung bình mới về client 
             with ThreadPool(len(active_clients_list)) as returning_pool:
                 arguments = []
-                
                 for client_name in active_clients_list:
                     clientObject = self.agents_dict['client'][client_name]
                     
-                    body = {'weights_original_shape': self.global_weights_original_shape[iteration],
+                    body = {
+                            # 'weights_original_shape': self.global_weights_original_shape[iteration],
                             'iteration': iteration,
-                            'encrypted_weights' : self.global_weights[iteration], 
+                            'encrypted_weights' : self.global_weights[iteration],
                             'encrypted_biases': self.global_biases[iteration],
                             'simulated_time': simulated_time}
                     

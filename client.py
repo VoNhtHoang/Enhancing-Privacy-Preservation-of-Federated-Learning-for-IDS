@@ -1,5 +1,4 @@
 import copy
-import numpy as np
 import sys, os
 import random
 import threading
@@ -10,6 +9,7 @@ from sklearn import metrics
 import numpy as np
 import tenseal as ts
 import tensorflow as tf
+import pandas as pd
 
 ######
 from tensorflow import keras
@@ -27,8 +27,7 @@ from dp_mechanisms import laplace
 ##### CODE SECTION
 LATENCY_DICT = {}
 
-tolerance_left_edge = 0.2
-tolerance_right_edge=2.0
+
 class Message:
     def __init__(self, sender_name, recipient_name, body):
         self.sender = sender_name
@@ -39,33 +38,48 @@ class Message:
         return "Message from {self.sender} to {self.recipient}.\n Body is : {self.body} \n \n"
 
 class Client():
-    def __init__(self, client_name, data_train, data_test, active_clients_list, he_context):
+    def __init__(self, client_name, data_train, data_val, data_test, steps_per_epoch, val_steps, test_steps, active_clients_list, he_context):
         self.client_name = client_name
         self.active_clients_list = active_clients_list
         self.data_train = data_train
         self.data_test = data_test
+        self.data_val = data_val
         self.agent_dict = {}
-        self.temp_dir = client_name + "_log/" + datetime.now().strftime("%Hh%Mp__%d-%m")
-        os.mkdir(self.temp_dir)
+        self.temp_dir = "federated_learning_log/"+ datetime.now().strftime("Month %m -- Day %d___%Hh %Mp")
+        os.makedirs(self.temp_dir, exist_ok=True)
+        self.temp_dir = self.temp_dir +"/"+ client_name + "_log"
+        os.makedirs(self.temp_dir, exist_ok=True)
+        
         
         ## global
         self.global_weights = {}
         self.global_biases = {}
         self.global_accuracy = {}
+        self.global_loss = {}
+        self.global_test_acc ={}
+        self.global_test_loss= {}
         
         ## local
+        self.model = self.init_model()
         self.local_weights = {}
+        self.local_weights_shape=[]
+        self.local_biases_shape= []
         self.local_biases = {}
         self.local_accuracy = {}
+        self.local_loss = {}
         self.compute_times = {} # proc weight
         self.he_context = he_context
+        self.convergence = 0 #số lần hội tụ qua nhiều iteration
+        self.unconvergence =0 
         
         # dp parameter
         self.alpha = 1.0
-        self.epsilon = 1.0
+        self.epsilon = 0.1
         self.mean = 0
-        self.steps_per_epoch = 50
-        self.local_weights_noise ={}
+        self.steps_per_epoch = steps_per_epoch
+        self.validation_steps = val_steps
+        self.test_steps = test_steps
+        self.local_weights_noise = {}
         self.local_biases_noise = {}
         
         for name in active_clients_list:
@@ -88,7 +102,66 @@ class Client():
         self.steps_per_epoch = steps_per_epoch
         
     def get_steps_per_epoch(self):
-        print(self.steps_per_epoch)
+        print("Train steps: ", self.steps_per_epoch)
+        
+    def set_validation_steps(self, validation_steps):
+        self.validation_steps = validation_steps
+        
+    def get_validation_steps(self):
+        print("Val steps: ", self.validation_steps)
+
+    def set_test_steps(self, test_steps):
+        self.test_steps = test_steps
+        
+    def get_test_steps(self):
+        print("Test steps: ", self.test_steps)
+        
+############################## INIT MODEL ########################################
+    def init_model(self):
+        features, labels = next(iter(self.data_train))
+        input_shape = (features.shape[1], 1)
+        output_shape = labels.shape[1]
+        
+        """====================== Classification ====================="""
+        model = keras.Sequential([
+            layers.Input(shape=input_shape),
+            layers.Conv1D(filters=128, kernel_size=3, padding="same", activation="relu"),
+            layers.BatchNormalization(),
+            layers.Conv1D(filters=128, kernel_size=3,  padding="same",activation="relu"),
+            layers.BatchNormalization(),
+            layers.MaxPooling1D(pool_size=2),
+            layers.Dropout(0.25),
+            layers.Flatten(),
+            layers.Dense(128, activation='relu'),
+            layers.BatchNormalization(),
+            layers.Dense(output_shape, activation='softmax')
+        ])
+        
+        # =============  binary =====================
+        # model = keras.Sequential([
+        #     layers.Input(shape=input_shape),
+        #     layers.Conv1D(filters=128, kernel_size=3, padding="same", strides=1, activation="relu"),
+        #     layers.BatchNormalization(),
+        #     layers.MaxPooling1D(pool_size=2),
+        #     layers.Conv1D(filters=128, kernel_size=3, padding="same", strides=1, activation="relu"),
+        #     layers.BatchNormalization(),
+        #     layers.MaxPooling1D(pool_size=2),
+        #     layers.Flatten(),
+        #     layers.Dropout(0.5),
+        #     layers.Dense(128, activation='relu'),
+        #     layers.Dense(64, activation='relu'),  
+        #     layers.Dropout(0.3),                  
+        #     layers.Dense(1, activation='sigmoid')
+        # ])
+                # free
+        del input_shape, features, labels
+        
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        # model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        return model
+
+############################  INIT MODEL ######################################
+
 ##########################################     HE CONTEXT     #################################################
     def init_he_context(self):
         """Thiết lập context mã hóa đồng hình"""
@@ -101,195 +174,169 @@ class Client():
         context.global_scale = 2**40
         return context
     
-    def he_params_encryption(self, weights, biases):
-        # Flatten weights để mã hóa
-        weights_flat = weights.flatten()
-        
-        # Mã hóa
-        encrypted_weights = ts.ckks_vector(self.he_context, weights_flat)
-        encrypted_biases = ts.ckks_vector(self.he_context, biases)
-        
-        return encrypted_weights.serialize(), encrypted_biases.serialize()
+    def he_params_encryption(self, flattened_weights, flattened_biases):
+        encrypted_weights = ts.ckks_vector(self.he_context, flattened_weights)
+        encrypted_biases = ts.ckks_vector(self.he_context, flattened_biases)
+        # print("$$$$$flatten_bias$$$$$", flattened_biases.shape)
+        return encrypted_weights.serialize() , encrypted_biases.serialize()
     
-    def he_params_decryption(self, encrypted_weights, encrypted_biases, weights_original_shape):
-        """Giải mã weights và biases"""
-        # Giải mã
+    def he_params_decryption(self, encrypted_weights, encrypted_biases):
         decrypted_weights = np.array(encrypted_weights.decrypt())
         decrypted_biases = np.array(encrypted_biases.decrypt())
+        # print("======Decrypted Biases=======", decrypted_biases.shape)
         
-        # Reshape weights về hình dạng ban đầu
-        decrypted_weights = decrypted_weights.reshape(weights_original_shape)
-        
-        return decrypted_weights, decrypted_biases
+        return decrypted_weights , decrypted_biases
 ##########################################     HE CONTEXT     #################################################
 
-    
+
+##########################################     FLATTEN       ##############################################
+    def save_shape(self, weights, biases, iteration):
+        if iteration <2:
+            for index, weights_layer in enumerate(weights):
+                weights_shape = weights_layer.shape
+                self.local_weights_shape.append(weights_shape)
+                
+            for index, bias in enumerate(biases):
+                bias_shape = bias.shape
+                self.local_biases_shape.append(bias_shape)
+        return None
+    def flatten_weights(self, weights, biases):
+        
+        # print("Biases shapes: ",self.local_biases_shape)
+        arr_1 = [weight.flatten() for weight in weights]
+        arr_2 = [bias.flatten() for bias in biases]
+        return np.concatenate(arr_1).ravel(), np.concatenate(arr_2).ravel()
+
+    def de_flatten_weights(self, flattened_weights, flattened_biases):
+        # print("+++ weight Length +++", len(flattened_weights))
+        # print("=== Biases Shape ===", len(flattened_biases))
+        
+        weights=[]
+        right_pointer=0
+        for shape in self.local_weights_shape:
+            delta = 1
+            for i in shape:
+                delta*=i
+            weights.append(np.array(flattened_weights[right_pointer*1:right_pointer+delta].reshape(shape))) 
+            right_pointer +=delta
+            
+        biases = []
+        right_pointer=0
+        for shape in self.local_biases_shape:
+            delta = shape[0]
+            # print(self.client_name+ f"{shape}")
+            biases.append(np.array(flattened_biases[right_pointer:right_pointer+delta].reshape(shape)))
+            right_pointer +=delta
+        return weights, biases
+##########################################     FLATTEN     ###############################################
+
+
 ################################################ ADD NOISE #####################################################
     def add_gamma_noise(self, local_weights, local_biases, iteration):
-        weights_shape = local_weights.shape
-        weights_dp_noise = np.zeros(weights_shape)
-
-        biases_shape = local_biases.shape
-        biases_dp_noise = np.zeros(biases_shape)
-        
+        weights_dp_noise=[]
+        biases_dp_noise=[]
         sensitivity =  2 / (len(self.active_clients_list)
                           *self.steps_per_epoch*self.alpha)
-        
-        for i in range(weights_shape[0]):  # weights_modified is 2-D
-            for j in range(weights_shape[1]):
-                dp_noise = laplace(mean=self.mean, 
-                                sensitivity=sensitivity,
-                                epsilon=self.epsilon)
-                weights_dp_noise [i][j] = dp_noise
+        for weight in local_weights:
+            if abs(weight) > 1e-15:
+                weights_dp_noise.append(laplace(mean=self.mean, 
+                                    sensitivity=sensitivity,
+                                    epsilon=self.epsilon))
+            else:
+                weights_dp_noise.append(0)
                 
+        for weight in local_biases:
+            if abs(weight) > 1e-15:
+                biases_dp_noise.append(laplace(mean=self.mean, 
+                                    sensitivity=sensitivity,
+                                    epsilon=self.epsilon))
+            else:
+                biases_dp_noise.append(0)
         
-        for i in range(biases_shape[0]):
-            dp_noise = laplace(mean=self.mean,
-                               sensitivity=sensitivity,
-                               epsilon=self.epsilon)
-            biases_dp_noise [i] = dp_noise
-        
-        weights_with_noise = copy.deepcopy(local_weights)  # make a copy to not mutate weights
-        biases_with_noise = copy.deepcopy(local_biases)
-
         self.local_weights_noise[iteration] = weights_dp_noise
-        weights_with_noise += weights_dp_noise
         self.local_biases_noise[iteration] = biases_dp_noise
-        biases_with_noise += biases_dp_noise
-    
-        return weights_with_noise, biases_with_noise
+        
+        weights_with_noise = local_weights + weights_dp_noise
+        biases_with_noise = local_biases + biases_dp_noise
+
+        return np.array(weights_with_noise), np.array(biases_with_noise)
 ################################################ ADD NOISE #####################################################
 
 
-################################################ MODEL ###################################################
+################################################ MODEL FIT ###################################################
     def model_fit(self, iteration):
         file_path = self.temp_dir +"/Iteration_"+str(iteration)+".csv"
         file_path_model = self.temp_dir+"/model_"+str(iteration)+".keras"
-        
-        features, labels = next(iter(self.data_train))
-        input_shape = (features.shape[1], 1)
-        # output_shape = labels.shape[1]
-
-        """====================== Classification ====================="""
-        # model = keras.Sequential([
-        #     layers.Input(shape=input_shape),
-        #     layers.Conv1D(filters=32, kernel_size=3, padding="same", activation="relu"),
-        #     layers.MaxPooling1D(pool_size=4),
-        #     layers.Conv1D(filters=64, kernel_size=3,  padding="same",activation="relu"),
-        #     layers.MaxPooling1D(pool_size=2),
-        #     layers.Flatten(),
-        #     layers.Dense(128, activation='relu'),
-        #     layers.Dropout(0.5),
-        #     layers.BatchNormalization(),
-        #     layers.Dense(output_shape, activation='softmax')
-        # ])
-        
-        # =============  binary =====================
-        model = keras.Sequential([
-            layers.Input(shape=input_shape),
-            layers.Conv1D(filters=32, kernel_size=3, padding="same", activation="relu"),
-            layers.MaxPooling1D(pool_size=4),
-            layers.Conv1D(filters=64, kernel_size=3,  padding="same",activation="relu"),
-            layers.MaxPooling1D(pool_size=2),
-            layers.Flatten(),
-            layers.Dense(128, activation='relu'),
-            layers.Dropout(0.5),
-            layers.BatchNormalization(),
-            layers.Dense(1, activation='sigmoid')  # dùng sigmoid thay cho softmax
-        ])
-        
-        ## free
-        del input_shape, features, labels
-        
+         
         csv_logger = CSVLogger(file_path, append=True)
-        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
         
         if iteration > 1:
-            print(f"{iteration} Come here!")
-            global_weights = copy.deepcopy(self.global_weights[iteration - 1])
-            global_biases = copy.deepcopy(self.global_biases[iteration - 1])
-            model.layers[-1].set_weights([global_weights,  global_biases])
-            del global_weights, global_biases
+            print(f"{iteration} {self.client_name} Model update params!")
+            # Set Weights và Biases tất cả các layer
+            index =0
+            for layer in self.model.layers:
+                if layer.name.startswith('conv1d') or layer.name.startswith('dense'):
+                    layer.set_weights([self.local_weights[iteration-1][index], self.local_biases[iteration-1][index]])
+                    index+=1
         
-        csv_logger = CSVLogger(file_path, append=True)
-        # if self.client_name =='client_0':
-        #     steps_per_epoch = 115
-        # elif self.client_name =='client_1':
-        #     steps_per_epoch = 230
-        # elif self.client_name == 'client_2':
-        #     steps_per_epoch = 345
+        #steps = int(np.ceil(self.steps_per_epoch / 100))
+        self.model.fit(self.data_train, epochs= 4,
+                  validation_data= self.data_val, validation_steps= self.validation_steps , 
+                  steps_per_epoch= self.steps_per_epoch, verbose = 1, callbacks=[csv_logger])
         
-        model.fit(self.data_train, epochs=5, steps_per_epoch=self.steps_per_epoch, callbacks=[csv_logger])
-        model.save(file_path_model)
+        self.model.save(file_path_model)
         
-        weights, biases = model.layers[-1].get_weights()
+        print("Come done model fit")
+        weights = []
+        biases = []
+        for layer in self.model.layers:
+            if layer.name.startswith('conv1d') or layer.name.startswith('dense'):
+                weights.append(layer.get_weights()[0])
+                biases.append(layer.get_weights()[1])
         return weights, biases
-################################################ MODEL #####################################################
-    
+################################################ MODEL FIT #####################################################
+
 
 ############################################## PRODUCE WEIGHTS #############################################################   
     def proc_weights(self, message):
-        
         start_time = datetime.now()
         body = message.body
         iteration, lock, simulated_time = body['iteration'], body['lock'], body['simulated_time']
-
-        # if iteration - 1 > len(self.train_datasets):  # iteration is indexed starting from 1
-        #     raise (ValueError(
-        #         'Not enough data to support a {}th iteration. Either change iteration data length in config.py or decrease amount of iterations.'.format(
-        #             iteration)))
         
-        weights, biases = self.model_fit(iteration)
-
+        weights, biases = self.model_fit(iteration) #,biases
+        
+        # Cập nhật local weights theo iteration
         self.local_weights[iteration] = weights
         self.local_biases[iteration] = biases
+        # print("Local weight Length: ", len(self.local_weights[iteration]))
         
-        # add noise - lock để đảm bảo không xung đột
+        # Flatten weights
+        self.save_shape(weights, biases, iteration)
+        weights, biases = self.flatten_weights(weights, biases)
+        
+        # add noise - lock để đảm bảo không xung đột tài nguyên máy khi HE
         lock.acquire()  # for random seed
-        weights, biases = self.add_gamma_noise(local_weights=weights, local_biases=biases, iteration=iteration)   
-        final_encrypted_weights, final_encrypted_biases = self.he_params_encryption(weights, biases)         
+        weights, biases = self.add_gamma_noise(local_weights=weights,  local_biases= biases,  iteration=iteration)   #, biases
+        weights, biases = self.he_params_encryption(weights, biases)   #, final_encrypted_biases
         lock.release()
-        
-        # print("Weights ", weights)
-        # temp_context = self.he_context.serialize(save_secret_key= False)
-        # tmp_context = ts.context_from(temp_context)
-        # temp_enc_w = ts.lazy_ckks_vector_from(final_encrypted_weights)
-        # temp_enc_w.link_context(tmp_context)
-        # temp_enc_w *=2
-        # temp_enc_b = ts.lazy_ckks_vector_from(final_encrypted_biases)
-        # temp_enc_b.link_context(tmp_context)
-        # temp_enc_b *=2
-        
-        # enc_w = temp_enc_w.serialize()
-        # enc_b = temp_enc_b.serialize()
-        
-        # encrypted_weights = ts.lazy_ckks_vector_from(enc_w)
-        # encrypted_weights.link_context(self.he_context)
-        
-        # encrypted_biases = ts.lazy_ckks_vector_from(enc_b)
-        # encrypted_biases.link_context(self.he_context)
-        # weights_original_shape = weights.shape
-        # return_weights, return_biases = self.he_params_decryption(
-        #     encrypted_weights, encrypted_biases, weights_original_shape
-        # )
-        # print("Weight tets", return_weights)
-        
+          
         #end
         end_time = datetime.now()
         compute_time = end_time - start_time
         self.compute_times[iteration] = compute_time
 
+        # Giả sử không độ trễ 
         simulated_time += compute_time + LATENCY_DICT[self.client_name]['server_0']
-
+        print(type(compute_time))
         body = {'context' : self.he_context.serialize(save_secret_key=False),
-                'weights_original_shape': weights.shape,
-                'encrypted_weights': final_encrypted_weights,
-                'encrypted_biases': final_encrypted_biases,
+                # 'weights_original_shape': self.local_weights_shape,
+                'encrypted_weights': weights,
+                'encrypted_biases': biases,
                 'iter': iteration,
                 'compute_time': compute_time,
                 'simulated_time': simulated_time}  # generate body
 
-        print(self.client_name + "Come end!")
+        print(self.client_name + "End Produce Weights")
         msg = Message(sender_name=self.client_name, recipient_name=self.agents_dict['server']['server_0'], body=body)
         return msg
 
@@ -305,40 +352,53 @@ class Client():
         encrypted_biases = ts.lazy_ckks_vector_from(body['encrypted_biases'])
         encrypted_biases.link_context(self.he_context)
         
-        weights_original_shape = body['weights_original_shape']
+        # weights_original_shape = body['weights_original_shape']
         return_weights, return_biases = self.he_params_decryption(
-            encrypted_weights, encrypted_biases, weights_original_shape
+            encrypted_weights, encrypted_biases
         )
+
         ## free
-        del encrypted_weights, encrypted_biases
+        del encrypted_weights , encrypted_biases
         
         ## remove dp
-        return_weights -= self.local_weights_noise[iteration]/ len(self.active_clients_list)
-        return_biases -= self.local_biases_noise[iteration] / len(self.active_clients_list)
+        return_weights -= self.local_weights_noise[iteration]
+        return_biases -= self.local_biases_noise[iteration]
         
-        self.global_weights[iteration] = return_weights
-        self.global_biases[iteration]  = return_biases
+        self.global_weights[iteration], self.global_biases[iteration] = self.de_flatten_weights(return_weights, return_biases)
         
-        local_weights = self.local_weights[iteration]
-        local_biases = self.local_biases[iteration]
-
         # Tính độ hội tụ
-        converged = self.check_convergence((local_weights, local_biases), (
-            return_weights, return_biases))  # check whether weights have converged
+        # check whether weights have converged
         
-        local_accuracy = self.evaluate_accuracy(local_weights, local_biases, iteration)
-        global_accuracy = self.evaluate_accuracy(return_weights, return_biases, iteration)
+        self.local_accuracy[iteration], self.local_loss[iteration] = self.evaluate_accuracy(self.local_weights[iteration], self.local_biases[iteration])
+        self.global_accuracy[iteration], self.global_loss[iteration] = self.evaluate_accuracy(self.global_weights[iteration], self.global_biases[iteration])
         
-        self.local_accuracy[iteration] = local_accuracy
-        self.global_accuracy[iteration] = global_accuracy
+        ## Lưu global acc, loss, # precision, recall tùy ý
+        history = {
+            "global_acc": [],
+            "global_loss": []
+        }
+        history['global_acc'].append(self.global_accuracy[iteration])
+        history['global_loss'].append(self.global_loss[iteration])
+        
+        file_his = self.temp_dir+"/global_val.csv"
+        if iteration ==1:
+            pd.DataFrame(history).to_csv(file_his, index=False, header= True, mode='a')
+        else:
+            pd.DataFrame(history).to_csv(file_his, index=False, header= False, mode='a')
+            
+        
+        # Kiểm tra hội tụ Có biến self.convergence ở trên
+        converged = self.check_convergence(iteration)
 
-        args = [self.client_name, iteration, local_accuracy, global_accuracy]
+        args = [self.client_name, iteration, self.local_accuracy[iteration], self.local_loss[iteration], self.global_accuracy[iteration], self.global_loss[iteration]]
         iteration_report = 'Performance Metrics for {} on iteration {} \n' \
                            '------------------------------------------- \n' \
                            'local accuracy: {} \n' \
+                            'local loss: {} \n'\
                            'global accuracy: {} \n' \
+                            'global_loss: {} \n' \
         
-        #latency - độ trễ giữa các client
+
         args.append(self.compute_times[iteration])
         iteration_report += 'local compute time: {} \n'
 
@@ -347,49 +407,70 @@ class Client():
         
         print("Arguments: ",iteration_report.format(*args))
 
-        msg = Message(sender_name=self.client_name, 
+        msg = Message(sender_name=self.client_name,
                       recipient_name='server_0',
                       body={'converged': converged,
                             'simulated_time': simulated_time + LATENCY_DICT[self.client_name]['server_0']})
         return msg
 
 ############################################## PREDICT + EVALUATE #########################################################          
-    def evaluate_accuracy(self, local_weights, local_biases, iteration):
-        file_path_model = self.temp_dir+"/model_"+str(iteration)+".keras"
-        model = load_model(file_path_model)
-        model.layers[-1].set_weights([local_weights, local_biases])
-        
-        if self.client_name=='client_0':
-            steps = 200
-            # 2030
-        elif self.client_name =='client_1':
-            steps = 400
-            # 4060
-        elif self.client_name == 'client_2':
-            steps = 600
-            # 6090
-            
-        loss, accuracy =model.evaluate(self.data_test, steps = steps)
-    
-        return accuracy
+    def evaluate_accuracy(self,weights, biases):
+        index =0 
+        for layer in self.model.layers:
+            if layer.name.startswith('conv1d') or layer.name.startswith('dense'):
+                layer.set_weights([weights[index], biases[index]])
+                index+=1
+        loss, accuracy= self.model.evaluate(self.data_test, steps = self.test_steps)
+        return accuracy, loss
 ############################################## PREDICT + EVALUATE #########################################################   
 
 
 ############################################## CHECK HỘI TỤ #########################################################       
-    def check_convergence(self, local_params, global_params):
-        local_weights, local_biases = local_params
-        global_weights, global_biases = global_params
+    def check_convergence(self, iteration):
+        #
+        tolerance_left_edge = 0.2
+        tolerance_right_edge=2.0
+        
+        if iteration > 1:
+            if self.global_loss[iteration]>self.global_loss[iteration-1]:
+                self.unconvergence +=1
+            else:
+                self.unconvergence -=1
+                if self.unconvergence < 0:
+                    self.unconvergence=0
+            if self.global_accuracy[iteration] <= self.global_accuracy[iteration-1]:
+                self.unconvergence +=1
+            else:
+                self.unconvergence -=1
+                if self.unconvergence < 0:
+                    self.unconvergence=0
+        
+        if np.std(self.global_loss[iteration]) < 0.05:
+            self.convergence += 1
+            
+        flattened_global_weights, flattened_global_bias = self.flatten_weights(self.global_weights[iteration],self.local_biases[iteration])
+        flattened_local_weights, flattened_local_bias = self.flatten_weights(self.local_weights[iteration],self.local_biases[iteration])
 
-        weights_differences = np.abs(global_weights - local_weights)
-        biases_differences = np.abs(global_biases - local_biases)
+        weights_differences = np.abs(flattened_global_weights, flattened_local_weights)
+        biases_differences = np.abs(flattened_global_bias, flattened_local_bias)
 
         # print("weights dif", weights_differences)
         # print("biases diff", biases_differences)
         if (weights_differences < tolerance_left_edge).all() and (biases_differences <tolerance_left_edge).all():
-            return True
+            self.convergence+=1
         elif (weights_differences > tolerance_right_edge).all() and (biases_differences > tolerance_right_edge).all():
-            return True     
+            self.convergence+=1
+        else:
+            self.convergence -=1
+            if self.convergence <0:
+                self.convergence=0
         
+        #4 điểm liên tiếp ok
+        if(self.convergence > 3 and self.unconvergence<3):
+            return True
+        elif self.unconvergence>3:
+            return True
+                    
         return False
 ############################################## CHECK HỘI TỤ ######################################################### 
 
